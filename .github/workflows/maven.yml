@@ -46,6 +46,12 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -U -DskipTests --file pom.xml
 
+
+    # 4. 登录ECR镜像中心
+    - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
     # # 4.发布项目
     # - name: Deploy to Server
     #   uses: appleboy/ssh-action@v1.0.3 # 假设使用ssh-action
