@@ -14,6 +14,7 @@ on:
   pull_request:
     branches: [ "master" ]
 
+
 # 👇 在这里添加权限设置
 permissions:
   contents: write
