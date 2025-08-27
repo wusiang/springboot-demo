@@ -55,6 +55,6 @@ jobs:
     #     key: ${{ secrets.SERVER_SSH_KEY }}
     #     script: |
     #       echo "Connected to server!"
-    #       cd /path/to/your/app
+    #       cd cd /usr/local/apps/myApp/
     #       docker-compose pull
     #       docker-compose up -d
