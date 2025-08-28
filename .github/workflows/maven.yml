@@ -85,13 +85,13 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           
             # 2. 拉取最新的镜像
-            sudo docker pull $IMAGE_NAME
+            docker pull $IMAGE_NAME
           
             # 3. 停止并删除旧的容器 (如果存在)
             # 使用 job 级别的 env.CONTAINER_NAME
-            sudo docker stop ${{ env.CONTAINER_NAME }} || true
-            sudo docker rm ${{ env.CONTAINER_NAME }} || true
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
           
             # 4. 运行新的容器
             # 使用 job 级别的 env.CONTAINER_NAME
-            sudo docker run -d -p 9014:9014 --name ${{ env.CONTAINER_NAME }} $IMAGE_NAME
+            docker run -d -p 9014:9014 --name ${{ env.CONTAINER_NAME }} $IMAGE_NAME
