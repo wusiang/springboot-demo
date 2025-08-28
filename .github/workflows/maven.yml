@@ -28,6 +28,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+
+    env:
+      ECR_REPOSITORY: "wujinghua/repo"
+      IMAGE_TAG: latest
+      CONTAINER_NAME: "springboot-app"
+      
     steps:
 
     # 1. 检出代码
@@ -46,15 +52,46 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -U -DskipTests --file pom.xml
 
-    # # 4.发布项目
-    # - name: Deploy to Server
-    #   uses: appleboy/ssh-action@v1.0.3 # 假设使用ssh-action
-    #   with:
-    #     host: ${{ secrets.SERVER_HOST }}
-    #     username: ${{ secrets.SERVER_USER }}
-    #     key: ${{ secrets.SERVER_SSH_KEY }}
-    #     script: |
-    #       echo "Connected to server!"
-    #       cd /path/to/your/app
-    #       docker-compose pull
-    #       docker-compose up -d
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # 4. 登录ECR镜像中心
+    - name: Log in to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    # 6. 构建、标记和推送镜像到 ECR (使用全局变量)
+    - name: Build, tag, and push image to Amazon ECR
+      run: |
+        docker build -f src/main/resources/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+      # 7. 发布项目 (使用全局变量并修正)
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_KEY }}
+        script: |
+            # 定义完整的镜像名变量
+            IMAGE_NAME="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          
+            # 1. 登录 ECR (现在 EC2 上有 aws cli 了)
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          
+            # 2. 拉取最新的镜像
+            docker pull $IMAGE_NAME
+          
+            # 3. 停止并删除旧的容器 (如果存在)
+            # 使用 job 级别的 env.CONTAINER_NAME
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+          
+            # 4. 运行新的容器
+            # 使用 job 级别的 env.CONTAINER_NAME
+            docker run -d -p 9014:9014 --name ${{ env.CONTAINER_NAME }} $IMAGE_NAME
