@@ -30,7 +30,6 @@ jobs:
 
 
     env:
-      ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
       ECR_REPOSITORY: "wujinghua/repo"
       IMAGE_TAG: latest
       CONTAINER_NAME: "springboot-app"
