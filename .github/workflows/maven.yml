@@ -68,6 +68,22 @@ jobs:
           docker build -f src/main/resources/Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+
+    # 7. 发布项目
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ${{ secrets.AWS_EC2_USER }}
+        key: ${{ secrets.AWS_EC2_KEY }}
+        script: |
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            IMAGE_REPO=${{ steps.login-ecr.outputs.registry }}/springboot-app:latest
+            docker pull $IMAGE_REPO
+            docker stop springboot-app || true
+            docker rm springboot-app || true
+            docker run -d -p 9014:9014 --name springboot-app $IMAGE_REPO
+
     # # 4.发布项目
     # - name: Deploy to Server
     #   uses: appleboy/ssh-action@v1.0.3 # 假设使用ssh-action
