@@ -65,7 +65,7 @@ jobs:
         ECR_REPOSITORY: "wujinghua/repo" 
         IMAGE_TAG: latest 
       run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -f src/main/resources/Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
     # # 4.发布项目
