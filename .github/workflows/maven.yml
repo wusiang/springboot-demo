@@ -78,6 +78,12 @@ jobs:
         username: ${{ secrets.AWS_EC2_USER }}
         key: ${{ secrets.AWS_EC2_KEY }}
         script: |
+            # --- 新增内容开始 ---
+            # 将 GitHub Secrets 导出为 EC2 上的环境变量
+            export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            export AWS_REGION=${{ secrets.AWS_REGION }}
+            # --- 新增内容结束 ---
             # 定义完整的镜像名变量
             IMAGE_NAME="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           
