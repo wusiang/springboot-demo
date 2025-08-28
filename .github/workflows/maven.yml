@@ -58,6 +58,16 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    # 6. 构建、标记和推送镜像到 ECR
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: "your-repository-name" 
+        IMAGE_TAG: latest 
+      run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
     # # 4.发布项目
     # - name: Deploy to Server
     #   uses: appleboy/ssh-action@v1.0.3 # 假设使用ssh-action
