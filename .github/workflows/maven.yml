@@ -1,45 +1,21 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
 
 name: spring-boot-demo
-
-
-# on:
-#   push:
-#     branches: [ "master" ]
-#   pull_request:
-#     branches: [ "master" ]
-
 on:
   workflow_dispatch:
-
-
 # 👇 在这里添加权限设置
 permissions:
   contents: write
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-
     env:
       ECR_REPOSITORY: "wujinghua/repo"
       IMAGE_TAG: latest
       CONTAINER_NAME: "springboot-app"
-      
     steps:
-
     # 1. 检出代码
     - name: check out code
       uses: actions/checkout@v4
-      
     # 2. 设置Java环境
     - name: Set up JDK 21
       uses: actions/setup-java@v4
@@ -47,31 +23,26 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-        
     # 3. 编译项目
     - name: Build with Maven
       #run: mvn clean package -U -DskipTests --file pom.xml
       run: mvn -B clean package -Dmaven.test.skip=true -U  -Dautoconfig.skip
-
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
-
     # 4. 登录ECR镜像中心
     - name: Log in to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
-
     # 6. 构建、标记和推送镜像到 ECR (使用全局变量)
     - name: Build, tag, and push image to Amazon ECR
       run: |
         docker build --no-cache -f src/main/resources/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-
-      # 7. 发布项目 (使用全局变量并修正)
+    # 7. 发布项目 (使用全局变量并修正)
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@v0.1.6
       with:
@@ -84,7 +55,7 @@ jobs:
           
             # 1. 登录 ECR (现在 EC2 上有 aws cli 了)
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-          
+
             # 2. 拉取最新的镜像
             docker pull $IMAGE_NAME
           
