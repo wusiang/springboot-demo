@@ -93,7 +93,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
           
             # 2. 拉取最新的镜像
-            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            docker pull $IMAGE_NAME
           
             # 3. 停止并删除旧的容器 (如果存在)
             # 使用 job 级别的 env.CONTAINER_NAME
