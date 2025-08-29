@@ -50,7 +50,8 @@ jobs:
         
     # 3. 编译项目
     - name: Build with Maven
-      run: mvn clean package -U -DskipTests --file pom.xml
+      #run: mvn clean package -U -DskipTests --file pom.xml
+      run: mvn -B clean package -Dmaven.test.skip=true -U  -Dautoconfig.skip
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -69,7 +70,6 @@ jobs:
       run: |
         docker build --no-cache -f src/main/resources/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-
       # 7. 发布项目 (使用全局变量并修正)
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@v0.1.6
