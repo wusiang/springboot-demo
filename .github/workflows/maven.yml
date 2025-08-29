@@ -91,6 +91,8 @@ jobs:
           
             # 1. 登录 ECR (现在 EC2 上有 aws cli 了)
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+            docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
           
             # 2. 拉取最新的镜像
             docker pull $IMAGE_NAME
