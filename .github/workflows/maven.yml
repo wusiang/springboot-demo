@@ -72,7 +72,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
             # 2. 删除历史镜像
-            docker rmi ${IMAGE_NAME} -f;
+            # docker rmi ${IMAGE_NAME} -f;
             
             # 2. 拉取最新的镜像
             docker pull $IMAGE_NAME
