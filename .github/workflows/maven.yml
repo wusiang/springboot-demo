@@ -67,11 +67,11 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
             # 2. 删除历史镜像
-            echo "❎ Deleting old image: ${IMAGE_NAME}"
+            echo "❎ 删除历史镜像: ${IMAGE_NAME}"
             docker rmi ${IMAGE_NAME} -f;
             
             # 2. 拉取最新的镜像
-            echo "⬇️ Pulling new image: ${IMAGE_NAME}"
+            echo "⬇️ 正在拉取新镜像: ${IMAGE_NAME}"
             docker pull $IMAGE_NAME
           
             # 3. 停止并删除旧的容器 (如果存在)
@@ -81,14 +81,20 @@ jobs:
 
             echo "🔎 Checking for old container..."
             if [ "$(sudo docker ps -q -f name=^/${CONTAINER_NAME}$)" ]; then
-              echo "  -> Stopping container ${CONTAINER_NAME}..."
+              echo "  -> 找到了正在运行的容器，正在停止..."
               sudo docker stop ${CONTAINER_NAME}
             fi
             if [ "$(sudo docker ps -aq -f status=exited -f name=^/${CONTAINER_NAME}$)" ]; then
-              echo "  -> Removing stopped container ${CONTAINER_NAME}..."
+              echo "  -> 找到了已停止的容器，正在删除..."
               sudo docker rm ${CONTAINER_NAME}
             fi
           
-            # 4. 运行新的容器
-            # 使用 job 级别的 env.CONTAINER_NAME
+            # --- 5. 运行新的容器 ---
+            echo "▶️ 正在启动新容器..."
             docker run -d -p 9014:9014 --name ${{ env.CONTAINER_NAME }} $IMAGE_NAME
+
+            # --- 6. 【推荐】清理无用的镜像 ---
+            echo "🧹 正在清理不再使用的 Docker 镜像..."
+            sudo docker image prune -f
+
+            echo "✅ 部署成功完成！"
