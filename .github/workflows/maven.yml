@@ -50,7 +50,8 @@ jobs:
         
     # 3. 编译项目
     - name: Build with Maven
-      run: mvn clean package -U -DskipTests --file pom.xml
+      #run: mvn clean package -U -DskipTests --file pom.xml
+      run: mvn -B clean package -Dmaven.test.skip=true -U  -Dautoconfig.skip
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
