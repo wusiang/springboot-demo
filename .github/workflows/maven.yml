@@ -39,11 +39,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Login to ECR
-      run: |
-        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} |
-        docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-
     # 4. 登录ECR镜像中心
     - name: Log in to Amazon ECR
       id: login-ecr
@@ -72,15 +67,27 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
             # 2. 删除历史镜像
+            echo "❎ Deleting old image: ${IMAGE_NAME}"
             docker rmi ${IMAGE_NAME} -f;
             
             # 2. 拉取最新的镜像
+            echo "⬇️ Pulling new image: ${IMAGE_NAME}"
             docker pull $IMAGE_NAME
           
             # 3. 停止并删除旧的容器 (如果存在)
             # 使用 job 级别的 env.CONTAINER_NAME
-            docker stop ${{ env.CONTAINER_NAME }} || true
-            docker rm ${{ env.CONTAINER_NAME }} || true
+            #docker stop ${{ env.CONTAINER_NAME }} || true
+            #docker rm ${{ env.CONTAINER_NAME }} || true
+
+            echo "🔎 Checking for old container..."
+            if [ "$(sudo docker ps -q -f name=^/${CONTAINER_NAME}$)" ]; then
+              echo "  -> Stopping container ${CONTAINER_NAME}..."
+              sudo docker stop ${CONTAINER_NAME}
+            fi
+            if [ "$(sudo docker ps -aq -f status=exited -f name=^/${CONTAINER_NAME}$)" ]; then
+              echo "  -> Removing stopped container ${CONTAINER_NAME}..."
+              sudo docker rm ${CONTAINER_NAME}
+            fi
           
             # 4. 运行新的容器
             # 使用 job 级别的 env.CONTAINER_NAME
