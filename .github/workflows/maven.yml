@@ -39,6 +39,11 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Login to ECR
+      run: |
+        aws ecr get-login-password --region ${{ secrets.AWS_REGION }} |
+        docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
     # 4. 登录ECR镜像中心
     - name: Log in to Amazon ECR
       id: login-ecr
@@ -49,6 +54,8 @@ jobs:
       run: |
         docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+    
         
     # 6. 发布项目 (使用全局变量并修正)
     - name: Deploy to EC2 via SSH
