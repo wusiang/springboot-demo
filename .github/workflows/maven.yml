@@ -1,41 +1,21 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: spring-boot-demo
-
-
-# on:
-#   push:
-#     branches: [ "master" ]
-#   pull_request:
-#     branches: [ "master" ]
-
 on:
   workflow_dispatch:
-
-
+  
 # 👇 在这里添加权限设置
 permissions:
   contents: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
-
+    
     env:
-      ECR_REPOSITORY: "wujinghua/repo"
+      ECR_REPOSITORY: "springboot-app-image"
       IMAGE_TAG: latest
-      CONTAINER_NAME: "springboot-app"
+      CONTAINER_NAME: "springboot-app-dev"
       
     steps:
-
     # 1. 检出代码
     - name: check out code
       uses: actions/checkout@v4
@@ -50,7 +30,6 @@ jobs:
         
     # 3. 编译项目
     - name: Build with Maven
-      #run: mvn clean package -U -DskipTests --file pom.xml
       run: mvn -B clean package -Dmaven.test.skip=true -U  -Dautoconfig.skip
 
     - name: Configure AWS credentials
@@ -65,20 +44,13 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    # 6. 构建、标记和推送镜像到 ECR (使用全局变量)
+    # 5. 构建、标记和推送镜像到 ECR (使用全局变量)
     - name: Build, tag, and push image to Amazon ECR
       run: |
-        # Dockerfile 已经移动到根目录，更新路径
-        DOCKERFILE_PATH="Dockerfile"
-        echo "--- 准备构建镜像，以下是即将使用的 ${DOCKERFILE_PATH} 内容 ---"
-        # 打印根目录下的 Dockerfile 内容到日志
-        cat ${DOCKERFILE_PATH}
-        echo "-------------------- End of Dockerfile --------------------"
-        
-        #docker build --no-cache -f src/main/resources/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-      # 7. 发布项目 (使用全局变量并修正)
+        
+    # 6. 发布项目 (使用全局变量并修正)
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@v0.1.6
       with:
@@ -87,12 +59,14 @@ jobs:
         key: ${{ secrets.AWS_EC2_KEY }}
         script: |
             # 定义完整的镜像名变量
-            IMAGE_NAME="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+            IMAGE_NAME="${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           
             # 1. 登录 ECR (现在 EC2 上有 aws cli 了)
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
 
-           
+            # 2. 删除历史镜像
+            docker rmi ${IMAGE_NAME} -f;
+            
             # 2. 拉取最新的镜像
             docker pull $IMAGE_NAME
           
