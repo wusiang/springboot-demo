@@ -68,6 +68,14 @@ jobs:
     # 6. 构建、标记和推送镜像到 ECR (使用全局变量)
     - name: Build, tag, and push image to Amazon ECR
       run: |
+        # Dockerfile 已经移动到根目录，更新路径
+        DOCKERFILE_PATH="Dockerfile"
+
+        echo "--- 准备构建镜像，以下是即将使用的 ${DOCKERFILE_PATH} 内容 ---"
+        # 打印根目录下的 Dockerfile 内容到日志
+        cat ${DOCKERFILE_PATH}
+        echo "-------------------- End of Dockerfile --------------------"
+        
         #docker build --no-cache -f src/main/resources/Dockerfile -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
